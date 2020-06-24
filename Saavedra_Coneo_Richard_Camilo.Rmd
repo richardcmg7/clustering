@@ -2,14 +2,16 @@
 title: "Actividad_3_AA_G10"
 author: "Richard Saavedra"
 date: "6/22/2020"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, message=FALSE}
+```{r}
 install.packages("gmodels")
 install.packages("tidyverse")
 install.packages("readr")
@@ -69,6 +71,7 @@ data$`Is declined` <- as.factor(data$`Is declined`)
 summary(data)
 
 ```
+
 ```{r}
 data$isFradulent <- ifelse(data$isFradulent == "N",0,1)
 data$`Is declined` <- ifelse(data$`Is declined` == "N",0,1)
