@@ -19,7 +19,12 @@ install.packages("modeest")
 install.packages("corrplot")
 install.packages("e1071")
 install.packages("caTools")
+install.packages("http://download.r-forge.r-project.org/src/contrib/IsolationForest_0.0-26.tar.gz", repo=NULL, type="source")
+install.packages("h2o")
 
+suppressWarnings( suppressMessages( library( h2o ) ) ) 
+library(solitude)
+library(IsolationForest)
 library(caTools)
 library(e1071)
 library(gmodels)
@@ -28,11 +33,14 @@ library(tidyverse)
 library(Hmisc)
 library(modeest)
 library(cluster)
+library(corrplot)
 ```
 
 ### Leemos nuestros datos
 ```{r}
+set.seed(1234)
 data <- read_csv("data/datos.csv")
+
 
 ```
 
@@ -48,6 +56,7 @@ Eliminamos la columna Transaction date que contiene todos los valores nulos.
 
 ```{r}
 data$`Transaction date` <- NULL
+
 ```
 
 Volver las columnas categoricas a númericas
@@ -58,6 +67,36 @@ data$isForeignTransaction <- as.factor(data$isForeignTransaction)
 data$isHighRiskCountry <- as.factor(data$isHighRiskCountry)
 data$`Is declined` <- as.factor(data$`Is declined`)
 summary(data)
+
+```
+```{r}
+data$isFradulent <- ifelse(data$isFradulent == "N",0,1)
+data$`Is declined` <- ifelse(data$`Is declined` == "N",0,1)
+data$isHighRiskCountry <- ifelse(data$isHighRiskCountry == "N",0,1)
+data$isForeignTransaction<- ifelse(data$isForeignTransaction == "N",0,1)
+
+
+str(data)
+summary(data)
+
+```
+```{r}
+corr <- cor(data[,])
+corr
+
+corrGreater <- findCorrelation(corr, cutoff=0.8)
+corrGreater
+```
+
+```{r}
+
+Mat_Correlacion <- cor(data, method = "pearson")
+round(Mat_Correlacion, digits = 2)
+corrplot(Mat_Correlacion)
+
+```
+```{r}
+
 
 ```
 
