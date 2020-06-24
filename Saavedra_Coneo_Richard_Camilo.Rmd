@@ -9,6 +9,59 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, message=FALSE}
+install.packages("gmodels")
+install.packages("tidyverse")
+install.packages("readr")
+install.packages("caret")
+install.packages('Hmisc')
+install.packages("modeest") 
+install.packages("corrplot")
+install.packages("e1071")
+install.packages("caTools")
+
+library(caTools)
+library(e1071)
+library(gmodels)
+library(caret)
+library(tidyverse)
+library(Hmisc)
+library(modeest)
+library(cluster)
+```
+
+### Leemos nuestros datos
+```{r}
+data <- read_csv("data/datos.csv")
+
+```
+
+### Realizamos los valores nulos
+
+```{r}
+str(data)
+
+summary(data)
+```
+
+Eliminamos la columna Transaction date que contiene todos los valores nulos.
+
+```{r}
+data$`Transaction date` <- NULL
+```
+
+Volver las columnas categoricas a númericas
+
+```{r}
+data$isFradulent <- as.factor(data$isFradulent)
+data$isForeignTransaction <- as.factor(data$isForeignTransaction)
+data$isHighRiskCountry <- as.factor(data$isHighRiskCountry)
+data$`Is declined` <- as.factor(data$`Is declined`)
+summary(data)
+
+```
+
+
 ## R Markdown
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
