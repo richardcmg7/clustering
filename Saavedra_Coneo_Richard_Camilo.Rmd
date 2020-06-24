@@ -12,21 +12,27 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-install.packages("gmodels")
-install.packages("tidyverse")
-install.packages("readr")
-install.packages("caret")
-install.packages('Hmisc')
-install.packages("modeest") 
-install.packages("corrplot")
-install.packages("e1071")
-install.packages("caTools")
-install.packages("http://download.r-forge.r-project.org/src/contrib/IsolationForest_0.0-26.tar.gz", repo=NULL, type="source")
-install.packages("h2o")
+# install.packages("corrplot")
+#install.packages("gmodels")
+#install.packages("tidyverse")
+#install.packages("readr")
+#install.packages("caret")
+#install.packages('Hmisc')
+#install.packages("modeest") 
 
-suppressWarnings( suppressMessages( library( h2o ) ) ) 
-library(solitude)
-library(IsolationForest)
+# install.packages("e1071")
+# install.packages("caTools")
+# install.packages("http://download.r-forge.r-project.org/src/contrib/IsolationForest_0.0-26.tar.gz", repo=NULL, type="source")
+# install.packages("h2o")
+# install.packages("dygraphs")
+# install.packages("dplyr")
+# install.packages("DT")
+
+
+```
+
+```{r warning=FALSE, results='hide', message=FALSE}
+library( h2o )
 library(caTools)
 library(e1071)
 library(gmodels)
@@ -38,7 +44,8 @@ library(cluster)
 library(corrplot)
 ```
 
-### Leemos nuestros datos
+### Se cargan los datos a la variable `data`
+
 ```{r}
 set.seed(1234)
 data <- read_csv("data/datos.csv")
@@ -46,13 +53,14 @@ data <- read_csv("data/datos.csv")
 
 ```
 
-### Realizamos los valores nulos
+Se revisa si existen valores nulos.
 
 ```{r}
 str(data)
-
-summary(data)
 ```
+### Se hallan de las variables númericas el valor mínimo máximo, la mediana y la media.
+
+Se hallan de las variables categoricas las diferentes categorias y la frecuencia de cada una de ellas.
 
 Eliminamos la columna Transaction date que contiene todos los valores nulos.
 
@@ -68,9 +76,15 @@ data$isFradulent <- as.factor(data$isFradulent)
 data$isForeignTransaction <- as.factor(data$isForeignTransaction)
 data$isHighRiskCountry <- as.factor(data$isHighRiskCountry)
 data$`Is declined` <- as.factor(data$`Is declined`)
+```
+
+```{r}
 summary(data)
 
 ```
+
+
+Se cambian los valores que estaban en caracter de Y y N reeemplazandolos por 1 y 0 respectivamente
 
 ```{r}
 data$isFradulent <- ifelse(data$isFradulent == "N",0,1)
@@ -78,30 +92,71 @@ data$`Is declined` <- ifelse(data$`Is declined` == "N",0,1)
 data$isHighRiskCountry <- ifelse(data$isHighRiskCountry == "N",0,1)
 data$isForeignTransaction<- ifelse(data$isForeignTransaction == "N",0,1)
 
-
 str(data)
 summary(data)
-
 ```
+
+### Se hallan la correlaciones existentes entre las variables del conjunto de datos mediante la matriz de correlación
+
 ```{r}
 corr <- cor(data[,])
-corr
-
 corrGreater <- findCorrelation(corr, cutoff=0.8)
 corrGreater
 ```
 
-```{r}
+Se grafica la Matriz de correlación
+
+```{r results="hide"}
 
 Mat_Correlacion <- cor(data, method = "pearson")
 round(Mat_Correlacion, digits = 2)
 corrplot(Mat_Correlacion)
 
 ```
-```{r}
 
+Se definen el conjunto de datos de modelización y validación
+
+```{r}
+train_data <- sample(nrow(data), 0.8 * nrow(data))
+data_train <- data[train_data, ]
+data_test <- data[-train_data, ]
 
 ```
+
+```{r error=FALSE, message=FALSE, results='hide'}
+h2o.init()
+```
+
+```{r}
+
+allData_hex = as.h2o( data_train )
+str(allData_hex)
+```
+Se aplica la tecnica de detección de anomalias h2o.isolationforest
+```{r}
+dataModel = h2o.isolationForest( training_frame = allData_hex
+                                     , sample_rate = 0.1
+                                     , max_depth = 32
+                                     , ntrees = 100
+                                    )
+```
+Generamos la predicción
+```{r}
+
+```
+
+```{r results='hide', warning=FALSE}
+allData_hex_test = as.h2o( data_test)
+```
+
+```{r}
+score = h2o.predict( dataModel, allData_hex_test )
+result_pred = as.vector( score$predict )
+result_pred
+```
+
+
+
 
 
 ## R Markdown
