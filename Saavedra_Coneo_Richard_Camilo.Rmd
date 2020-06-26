@@ -42,6 +42,7 @@ library(Hmisc)
 library(modeest)
 library(cluster)
 library(corrplot)
+
 ```
 
 ### Se cargan los datos a la variable `data`
@@ -133,25 +134,93 @@ allData_hex = as.h2o( data_train )
 str(allData_hex)
 ```
 Se aplica la tecnica de detección de anomalias h2o.isolationforest
-```{r}
-dataModel = h2o.isolationForest( training_frame = allData_hex
-                                     , sample_rate = 0.1
-                                     , max_depth = 32
-                                     , ntrees = 100
-                                    )
+```{r warning=FALSE}
+dataModel = h2o.isolationForest( training_frame = allData_hex,
+                                 x              = colnames(allData_hex)[-11],
+                                 sample_rate    = 0.9,
+                                 max_depth      = 100,
+                                 ntrees         = 500
+                                )
+dataModel
 ```
 Generamos la predicción
-```{r}
-
-```
 
 ```{r results='hide', warning=FALSE}
-allData_hex_test = as.h2o( data_test)
+allData_hex_test = as.h2o(data_test)
+```
+
+```{r warning=FALSE}
+score = h2o.predict( dataModel, allData_hex_test )
+result_pred = as.vector( score$predict )
+
+```
+```{r}
+
+
+
 ```
 
 ```{r}
-score = h2o.predict( dataModel, allData_hex_test )
-result_pred = as.vector( score$predict )
-result_pred
+predicciones_h2o <- h2o.predict(
+                      object  = dataModel,
+                      newdata = allData_hex
+                    )
+predicciones <- as.data.frame(predicciones_h2o)
+predicciones
+```
+```{r}
+library(ggplot2)
+ggplot(data = predicciones, aes(x = mean_length)) +
+  geom_histogram(color = "gray40") +
+  geom_vline(
+    xintercept = quantile(predicciones$mean_length, seq(0, 1, 0.1)),
+    color      = "red",
+    linetype   = "dashed") +
+  labs(
+    title = "Distribución de las distancias medias del Isolation Forest",
+    subtitle = "Cuantiles marcados en rojo"  ) +
+  theme_bw()
 ```
 
+```{r}
+cuantiles <- quantile(x = predicciones$mean_length, probs = seq(0, 1, 0.05))
+cuantiles
+```
+
+```{r}
+
+datos <- data_train %>%
+         bind_cols(predicciones)
+head(datos)
+
+```
+```{r}
+  ggplot(data = datos,
+         aes(x = isFradulent, y = mean_length)) +
+  geom_jitter(aes(color = isFradulent), width = 0.03, alpha = 0.3) + 
+  geom_violin(alpha = 0) +
+  geom_boxplot(width = 0.2, outlier.shape = NA, alpha = 0) +
+  stat_summary(fun = "mean", colour = "orangered2", size = 3, geom = "point") +
+  labs(title = "Distancia promedio en el modelo Isolation Forest",
+       x = "clasificación (0 = normal, 1 = anomalía)",
+       y = "Distancia promedio") +
+  theme_bw() + 
+  theme(legend.position = "none")
+```
+```{r}
+resultados <- datos %>%
+              select(isFradulent, mean_length) %>%
+              arrange(mean_length) %>%
+              mutate(clasificacion = if_else(row_number() <= 176, "1", "0"))
+
+```
+
+```{r}
+mat_confusion <- MLmetrics::ConfusionMatrix(
+                    y_pred = resultados$clasificacion,
+                    y_true = resultados$y
+                 )
+mat_confusion
+```
+
+## Detección de Anomalias
