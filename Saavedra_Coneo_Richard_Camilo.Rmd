@@ -207,20 +207,32 @@ head(datos)
   theme_bw() + 
   theme(legend.position = "none")
 ```
+
+Acorde a la información del dataset, contiene 380 anomalías. Se muestra matriz de confusión resultante si se clasifican como anomalías las 380 observaciones con menor distancia predicha
+
 ```{r}
 resultados <- datos %>%
               select(isFradulent, mean_length) %>%
               arrange(mean_length) %>%
-              mutate(clasificacion = if_else(row_number() <= 176, "1", "0"))
+              mutate(clasificacion = if_else(row_number() <= 380, "1", "0"))
 
 ```
+
 
 ```{r}
 mat_confusion <- MLmetrics::ConfusionMatrix(
                     y_pred = resultados$clasificacion,
-                    y_true = resultados$y
+                    y_true = resultados$isFradulent
                  )
 mat_confusion
 ```
+Comentar sobre 
+```{r}
+a = 310 / 380 
+falsos_positivos = 1 - a
+falsos_positivos * 100
+```
 
-## Detección de Anomalias
+
+## Detección de Anomalias K-means
+
