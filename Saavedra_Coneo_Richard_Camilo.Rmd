@@ -1,8 +1,8 @@
 ---
-title: "Actividad_3_AA_G10"
-author: "Richard Saavedra"
+title: "Actividad 3 - Actividad grupal: Detección de anomalías y técnicas de agrupamiento"
 date: "6/22/2020"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -10,9 +10,16 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+<p>Grupo 10: Integrantes: </p>
+<center>
+<ul>
+<li>Cortés Forero Leydi Milena </li>
+<li>Saavedra Coneo Richard Camilo </li>
+<li>Rodríguez Angarita Ramón </li>
+<li>Zapata Llano Juan Sebastián </li>
+</ul></center>
 ```{r}
-# install.packages("corrplot")
+#install.packages("corrplot")
 #install.packages("gmodels")
 #install.packages("tidyverse")
 #install.packages("readr")
@@ -22,7 +29,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # install.packages("e1071")
 # install.packages("caTools")
-# install.packages("http://download.r-forge.r-project.org/src/contrib/IsolationForest_0.0-26.tar.gz", repo=NULL, type="source")
 # install.packages("h2o")
 # install.packages("dygraphs")
 # install.packages("dplyr")
@@ -59,18 +65,19 @@ Se revisa si existen valores nulos.
 ```{r}
 str(data)
 ```
-### Se hallan de las variables númericas el valor mínimo máximo, la mediana y la media.
+Se hallan de las variables numéricas el valor mínimo máximo, la mediana y la media.
 
-Se hallan de las variables categoricas las diferentes categorias y la frecuencia de cada una de ellas.
+Se hallan de las variables categóricas las diferentes categorías y la frecuencia de cada una de ellas.
 
-Eliminamos la columna Transaction date que contiene todos los valores nulos.
+Se eliminó la variable Transaction date por tener todos los datos nulos.
+
 
 ```{r}
 data$`Transaction date` <- NULL
 
 ```
 
-Volver las columnas categoricas a númericas
+Volver las columnas categóricas a númericas
 
 ```{r}
 data$isFradulent <- as.factor(data$isFradulent)
@@ -78,6 +85,7 @@ data$isForeignTransaction <- as.factor(data$isForeignTransaction)
 data$isHighRiskCountry <- as.factor(data$isHighRiskCountry)
 data$`Is declined` <- as.factor(data$`Is declined`)
 ```
+Se ejecuta la función summary para ver los valores máximos y mínimos de cada una de las variables numéricas, así como la media, se muestra también la frecuencia de las variables categóricas.
 
 ```{r}
 summary(data)
@@ -115,7 +123,9 @@ corrplot(Mat_Correlacion)
 
 ```
 
-Se definen el conjunto de datos de modelización y validación
+### Conjunto de datos de modelización y validación.
+
+Se toman los datos para la modelización del 80'%' para train y él 20% para test.
 
 ```{r}
 train_data <- sample(nrow(data), 0.8 * nrow(data))
@@ -133,7 +143,17 @@ h2o.init()
 allData_hex = as.h2o( data_train )
 str(allData_hex)
 ```
-Se aplica la tecnica de detección de anomalias h2o.isolationforest
+
+## Isolation Forest
+
+Es un método no supervisado para identificar anomalías (outliers) cuando los datos no están etiquetados, es decir, no se conoce la clasificación real (anomalía - no anomalía) de las observaciones.
+•	Su funcionamiento está inspirado en el algoritmo de clasificación y regresión Random Forest. 
+•	Un modelo Isolation Forest está formado por la combinación de múltiples árboles llamados isolation trees. 
+•	El modelo Isolation Forest se obtiene al combinar múltiples isolation tree, cada uno entrenado con una muestra distinta generada por bootstrapping a partir de los datos de originales.
+
+
+Se aplica la técnica de detección de anomalías h2o.isolationforest
+
 ```{r warning=FALSE}
 dataModel = h2o.isolationForest( training_frame = allData_hex,
                                  x              = colnames(allData_hex)[-11],
@@ -143,7 +163,8 @@ dataModel = h2o.isolationForest( training_frame = allData_hex,
                                 )
 dataModel
 ```
-Generamos la predicción
+
+Se genera la predicción
 
 ```{r results='hide', warning=FALSE}
 allData_hex_test = as.h2o(data_test)
@@ -154,11 +175,6 @@ score = h2o.predict( dataModel, allData_hex_test )
 result_pred = as.vector( score$predict )
 
 ```
-```{r}
-
-
-
-```
 
 ```{r}
 predicciones_h2o <- h2o.predict(
@@ -166,7 +182,7 @@ predicciones_h2o <- h2o.predict(
                       newdata = allData_hex
                     )
 predicciones <- as.data.frame(predicciones_h2o)
-predicciones
+head(predicciones)
 ```
 ```{r}
 library(ggplot2)
@@ -208,7 +224,10 @@ head(datos)
   theme(legend.position = "none")
 ```
 
-Acorde a la información del dataset, contiene 380 anomalías. Se muestra matriz de confusión resultante si se clasifican como anomalías las 380 observaciones con menor distancia predicha
+Acorde a la información del dataset, contiene 380 anomalías. 
+
+Se muestra matriz de confusión resultante si se clasifican como anomalías, las 380 observaciones con menor distancia predicha.
+
 
 ```{r}
 resultados <- datos %>%
@@ -226,7 +245,8 @@ mat_confusion <- MLmetrics::ConfusionMatrix(
                  )
 mat_confusion
 ```
-Comentar sobre 
+
+
 ```{r}
 a = 310 / 380 
 falsos_positivos = 1 - a
@@ -234,7 +254,13 @@ falsos_positivos * 100
 ```
 
 
-## Detección de Anomalias K-means
+## Técnica de agrupamiento K-means
+
+K-means es un algoritmo de clasificación no supervisada (clusterización) que agrupa objetos en k grupos basándose en sus características. 
+
+El agrupamiento se realiza minimizando la suma de distancias entre cada objeto y el centroide de su grupo o cluster. Se suele usar la distancia cuadrática.
+
+El algoritmo k-means resuelve un problema de optimización, siendo la función a optimizar (minimizar) la suma de las distancias cuadráticas de cada objeto al centroide de su cluster.
 
 ```{r}
 set.seed(1234)
@@ -279,4 +305,17 @@ aggregate(data = data_2,isForeignTransaction ~ cluster,mean)
 aggregate(data = data_2,isHighRiskCountry ~ cluster,mean)
 
 ```
+
+## Conclusiones
+* Se realizó el análisis de los datos del data frame cargando y revisando cada una de las variables observando que se tiene 12 variables con 3075 observaciones.
+En el análisis de los datos se observó que se cuenta con 1 variable lógica, 7 numéricas y 4 tipo char.
+
+* Al realizar la correlación de las variables se encuentra alta correlación entre la varible isFradulen con Transaction_amount, Total Number of declines/day, isForeignTransaction, isHighRiskCountry, 6-month_chbk_freq, tambien de la variable  
+Transaction_amount con Average Amount/transaction/day, is declined con  Daily_chargeback_avg_amt , 6_month_avg_chbk_amt, 6-month_chbk_freq, de la variable isForeignTransaction con  isHighRiskCountry, entre las más relevantes.
+
+* La detección de anomalías para el conjunto de datos la predicción permite inferir que la información de la data cargada contiene 380 anomalías clasificadas de manera adecuada por el método.
+
+* Se observó que para el ejemplo con K-means no queda tan claro el concepto, por lo que se sugeriría realizarla con otro método para ver si mejora. 
+En cuanto a los clusters usados se notó que los datos se situaron a la periferia de los círculos que identifican el grupo, y otro tanto dispersos sobre el círculo mayor, lo que no se deja ver muy claro el concepto, como sí aparece en el ejemplo propuesto por el profesor en las magistrales.
+
 
