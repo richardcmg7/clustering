@@ -236,3 +236,47 @@ falsos_positivos * 100
 
 ## Detección de Anomalias K-means
 
+```{r}
+set.seed(1234)
+data_2 <- as.data.frame(lapply(data, scale))
+
+```
+
+```{r}
+clusters <- kmeans(data_2,2)
+clusplot(data_2,
+         clusters$cluster,
+         color = TRUE
+         )
+```
+```{r}
+clusplot(data_2,
+         clusters$cluster,
+         color = TRUE,
+         col.clus=c(1:2)[unique(clusters$cluster)],
+         shade = TRUE,
+         labels = 2,
+         lines=0, 
+         main = "Bivariate Cluster Plot")
+```
+```{r}
+#library()
+#plotcluster(data_2, clusters$cluster)
+clusters$size
+clusters$centers
+```
+
+```{r}
+data_2$cluster <- clusters$cluster
+
+data_2[1:10,c("cluster","isFradulent","isForeignTransaction","isHighRiskCountry"
+              )]
+```
+
+```{r}
+aggregate(data = data_2,isFradulent ~ cluster,mean)
+aggregate(data = data_2,isForeignTransaction ~ cluster,mean)
+aggregate(data = data_2,isHighRiskCountry ~ cluster,mean)
+
+```
+
